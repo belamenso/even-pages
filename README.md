@@ -1,5 +1,9 @@
 # Even Pages
-Convert pdf to one having an even number of pages by possibly adding a blank page at the end.
 
-Printing an odd number of pages on my printer bends the last page in an annoying way.
+```
+Usage: ./even-pages.py IN.pdf ...
+       ./even-pages.py ppp2 IN.pdf ...
+       ./even-pages.py remove_last IN.pdf ...
+    Make number of pages even by possibly adding (removing) a blank last page, ppp pages per physical page.
+```
 
