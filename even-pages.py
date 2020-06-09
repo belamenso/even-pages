@@ -7,6 +7,7 @@ import subprocess
 from pprint import pprint
 import os.path
 from math import ceil
+from termcolor import colored
 '''
 NEEDS: pdftk, convert
 '''
@@ -56,52 +57,53 @@ def processOneFile(inputName, outputName, pdfPagesPerPhysicalPage=1):
 ###############
 
 
-def validFileNames(fnames): # None | [str]
+def validFileNames(fnames): # AssertionError(str) | None
     for fname in fnames:
-        if not fname.endswith('.pdf'): return None
-        if not isFile(fname) or isFile(defaultOutputName(fname)): return None
-    return fnames
+        if not fname.endswith('.pdf'):
+            raise ValueError(f'File "{fname}" doesn\'t end with ".pdf"')
+        if not isFile(fname):
+            raise ValueError(f'File "{fname}" doesn\'t exist')
+        if isFile(defaultOutputName(fname)):
+            raise ValueError(f'File "{defaultOutputName(fname)}" already exists')
 
 
-def parseArgs(): # -> None | (int|None, [str])
-    if len(sys.argv) <= 1: return
+def parseArgs(): # -> AssertionError(str) | (int|None, [str])
+    if len(sys.argv) <= 1: raise ValueError('Too few args')
     assert len(sys.argv) >= 2
 
     if sys.argv[1] == 'remove_last':
-        if len(sys.argv) == 2: return
-        got = validFileNames(sys.argv[2:])
-        if got is None: return
-        else: return (None, got)
-    elif sys.argv[1].startswith('ppp') and sys.argv[1][:3].isdigit():
-        ppp = int(sys.argv[1][:3])
-        if not (ppp >= 1): return
-        if len(sys.argv) == 2: return
-        got = validFileNames(sys.argv[2:])
-        if got is None: return
-        else: return (ppp, got)
+        if len(sys.argv) == 2: raise ValueError('Too few args')
+        args = sys.argv[2:]
+        validFileNames(args)
+        return None, args
+
+    elif sys.argv[1].startswith('ppp') and sys.argv[1][3:].isdigit():
+        ppp = int(sys.argv[1][3:])
+        if not (ppp >= 1): raise ValueError('ppp must be >= 1')
+        if len(sys.argv) == 2: raise ValueError('Too few args')
+        args = sys.argv[2:]
+        validFileNames(args)
+        return ppp, args
+
     else:
-        got = validFileNames(sys.argv[1:])
-        if got is None: return
-        else: return (None, got)
+        args = sys.argv[1:]
+        validFileNames(args)
+        return None, args
 
 
 if __name__ == '__main__':
-    got = parseArgs()
-    if got is None:
-        argumentsInvalid = True
-    else:
-        argumentsInvalid = False
-        ppp, fnames = got
+    try:
+        ppp, fnames = parseArgs()
         if ppp is None: ppp = 1
-
-    if argumentsInvalid:
+    except ValueError as e:
         print(f'Usage: {sys.argv[0]} IN.pdf ...')
         print(f'       {sys.argv[0]} ppp2 IN.pdf ...')
         print(f'       {sys.argv[0]} remove_last IN.pdf ...')
         print(f'    Make number of pages even by possibly adding (removing) a blank last page, ppp pages per physical page.')
-        sys.exit()
-
-    # XXX why isn't thep program informing about what went wrong?
+        print()
+        print('Reason for rejection of parameters:', colored(str(e.args[0]), 'red'))
+        print()
+        raise
 
     # XXX still ugly, why is parsing arguments in two places at once? This remove last is weird
 
